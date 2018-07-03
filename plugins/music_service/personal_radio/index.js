@@ -164,7 +164,6 @@ ControllerPersonalRadio.prototype.handleBrowseUri = function (curUri) {
   var self = this;
   var response;
 
-  //self.logger.info("ControllerPersonalRadio::handleBrowseUri");
   if (curUri.startsWith('kradio')) {
     if (curUri === 'kradio') {
       response = self.getRootContent();
@@ -180,6 +179,9 @@ ControllerPersonalRadio.prototype.handleBrowseUri = function (curUri) {
     }
     else if (curUri === 'kradio/linn') {
       response = self.getRadioContent('linn');
+    }
+    else if (curUri === 'kradio/ebs') {
+      response = self.getRadioContent('ebs');
     }
     else {
       response = libQ.reject();
@@ -198,6 +200,7 @@ ControllerPersonalRadio.prototype.getRootContent = function() {
   var response;
   var defer = libQ.defer();
 
+  self.logger.info("ControllerPersonalRadio::getRootContent");
   response = self.rootNavigation;
   response.navigation.lists[0].items = [];
   for (var key in self.rootStations) {
@@ -232,6 +235,11 @@ ControllerPersonalRadio.prototype.getRadioContent = function(station) {
       break;
     case 'linn':
       radioStation = self.radioStations.linn;
+      break;
+    case 'ebs':
+      radioStation = self.radioStations.ebs;
+      self.logger.info("ControllerPersonalRadio::getRadioContent EBS");
+      break;
   }
 
   response = self.radioNavigation;
@@ -246,6 +254,7 @@ ControllerPersonalRadio.prototype.getRadioContent = function(station) {
       icon: 'fa fa-music',
       uri: radioStation[i].uri
     };
+    self.logger.info("ControllerPersonalRadio::getRadioContent:"+channel);
     response.navigation.lists[0].items.push(channel);
   }
   defer.resolve(response);
@@ -348,6 +357,7 @@ ControllerPersonalRadio.prototype.explodeUri = function (uri) {
     albumart: '/albumart?sourceicon=music_service/personal_radio/'+station+'.svg'
   };
 
+  self.logger.info('[' + station + '] ' + 'ControllerPersonalRadio::explodeUri ');
   switch (uris[0]) {
     case 'webkbs':
       var userId = Math.random().toString(36).substring(2, 6) +
@@ -440,6 +450,12 @@ ControllerPersonalRadio.prototype.explodeUri = function (uri) {
       defer.resolve(response);
       break;
 
+    case 'webebs':
+      response["uri"] = self.radioStations.ebs[channel].url;
+      response["name"] = self.radioStations.ebs[channel].title;
+      defer.resolve(response);
+      break;
+
     default:
       defer.resolve();
   }
@@ -513,6 +529,7 @@ ControllerPersonalRadio.prototype.addRadioResource = function() {
   self.rootStations.kbs.title =  self.getRadioI18nString('KBS');
   self.rootStations.sbs.title =  self.getRadioI18nString('SBS');
   self.rootStations.mbc.title =  self.getRadioI18nString('MBC');
+  self.rootStations.ebs.title =  'EBS';
 
   self.radioStations.kbs[2].title =  self.getRadioI18nString('KBS1_RADIO');
   self.radioStations.kbs[3].title =  self.getRadioI18nString('KBS2_RADIO');
@@ -525,6 +542,10 @@ ControllerPersonalRadio.prototype.addRadioResource = function() {
   self.radioStations.sbs[0].title =  self.getRadioI18nString('SBS_POWER_FM');
   self.radioStations.sbs[1].title =  self.getRadioI18nString('SBS_LOVE_FM');
   self.radioStations.sbs[2].title =  self.getRadioI18nString('SBS_INTERNET_RADIO');
+
+  // EBS
+  self.radioStations.ebs[0].title =  'EBS01';
+
 
   // Korean radio streaming server preparing
   self.getSecretKey(radioResource.encodedRadio.radioKeyUrl).then(function(response) {
